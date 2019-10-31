@@ -11,31 +11,82 @@ namespace BlogsConsole
         public static void Main(string[] args)
         {
             logger.Info("Program started");
-            try
+            var menu = true;
+            while (menu)
             {
-
-                // Create and save a new Blog
-                Console.Write("Enter a name for a new Blog: ");
-                var name = Console.ReadLine();
-
-                var blog = new Blog { Name = name };
-
                 var db = new BloggingContext();
-                db.AddBlog(blog);
-                logger.Info("Blog added - {name}", name);
-
-                // Display all Blogs from the database
-                var query = db.Blogs.OrderBy(b => b.Name);
-
-                Console.WriteLine("All blogs in the database:");
-                foreach (var item in query)
+                Console.WriteLine("\n_______________\nBlog Console\n_______________\n1. Display Blogs\n2. Add Blog\n3. Add Post\n4. Remove Blogs\nEnter to Quit");
+                switch (Console.ReadLine())
                 {
-                    Console.WriteLine(item.Name);
+                    case "1":
+                        var query = db.Blogs.OrderBy(b => b.Name);
+                        Console.WriteLine("\n\n" + query.Count() +" blogs in the database:\n");
+                        foreach (var item in query)
+                        {
+                            Console.WriteLine(item.Name);
+                        }
+                        break;
+                    case "2":
+                        Console.WriteLine();
+                        Console.Write("Enter a name for a new Blog: ");
+                        var name = Console.ReadLine();
+                        var blog = new Blog { Name = name };
+                        db.AddBlog(blog);
+                        logger.Info($"Blog added - {name}");
+                        break;
+                    case "3":
+                        Console.WriteLine();
+                        var idQuery = db.Blogs.OrderBy(b => b.BlogId);
+                        int id=0;
+                        foreach (var item in idQuery)
+                        {
+                            Console.WriteLine(item.BlogId + " " + item.Name);
+                        }
+                        Console.WriteLine("Enter the ID of the Blog you are posting to");
+                        try {
+                            id = Convert.ToInt32(Console.ReadLine());
+                        }
+                        catch (Exception e) { Console.WriteLine("Please enter a number"); }
+                        Blog postBlog = null;
+                        foreach (var item in idQuery)
+                        {
+                            if (id == item.BlogId)
+                            {
+                                postBlog = item;
+                                break;
+                            }
+                        }
+                        if (postBlog == null) Console.WriteLine("Blog not found");
+                        else {
+                            Console.WriteLine("Enter Post Title:");
+                            var title = Console.ReadLine();
+                            while (title == "")
+                            {
+                                Console.WriteLine("Invalid title-\nEnter Post Title:");
+                                title = Console.ReadLine();
+                            }
+                            Console.WriteLine("Content:");
+                            var content = Console.ReadLine();
+                            Post post = new Post()
+                            {
+                                Title = title,
+                                Blog = postBlog,
+                                //BlogId = id,
+                                Content = content
+                            };
+                            db.AddPost(post);
+                            logger.Info("Post added to " + post.Blog.Name);
+                        }
+                        
+                        break;
+                    case "4":
+                        db.Blogs.RemoveRange(db.Blogs);
+                        db.SaveChanges();
+                        break;
+                default:
+                        menu = false;
+                        break;
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex.Message);
             }
             logger.Info("Program ended");
         }
