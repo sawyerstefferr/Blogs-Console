@@ -15,7 +15,7 @@ namespace BlogsConsole
             while (menu)
             {
                 var db = new BloggingContext();
-                Console.WriteLine("\n_______________\nBlog Console\n_______________\n1. Display Blogs\n2. Add Blog\n3. Add Post\n4. Remove Blogs\nEnter to Quit");
+                Console.WriteLine("\n_______________\nBlog Console\n_______________\n1. Display Blogs\n2. Add Blog\n3. Add Post\n4. View Posts\nEnter to Quit");
                 switch (Console.ReadLine())
                 {
                     case "1":
@@ -37,16 +37,18 @@ namespace BlogsConsole
                     case "3":
                         Console.WriteLine();
                         var idQuery = db.Blogs.OrderBy(b => b.BlogId);
-                        int id=0;
+                        int id = 0;
                         foreach (var item in idQuery)
                         {
                             Console.WriteLine(item.BlogId + " " + item.Name);
                         }
                         Console.WriteLine("Enter the ID of the Blog you are posting to");
-                        try {
-                            id = Convert.ToInt32(Console.ReadLine());
+                        var choice = Console.ReadLine();
+                        try
+                        {
+                            id = Convert.ToInt32(choice);
                         }
-                        catch (Exception e) { Console.WriteLine("Please enter a number"); }
+                        catch (Exception) { Console.WriteLine("Please enter a number"); }
                         Blog postBlog = null;
                         foreach (var item in idQuery)
                         {
@@ -71,7 +73,6 @@ namespace BlogsConsole
                             {
                                 Title = title,
                                 Blog = postBlog,
-                                //BlogId = id,
                                 Content = content
                             };
                             db.AddPost(post);
@@ -80,15 +81,59 @@ namespace BlogsConsole
                         
                         break;
                     case "4":
-                        db.Blogs.RemoveRange(db.Blogs);
-                        db.SaveChanges();
+                        Console.WriteLine();
+                        var idQuery2 = db.Blogs.OrderBy(b => b.BlogId);
+                        int id2 = 0;
+                        foreach (var item in idQuery2)
+                        {
+                            Console.WriteLine(item.BlogId + " " + item.Name);
+                        }
+                        Console.WriteLine("\nEnter the ID of the Blog you want to see posts for\n or enter nothing to view all posts");
+                        var postChoice = Console.ReadLine();
+                        if (postChoice == "") {
+                            var postQuery = db.Posts;
+                            Console.WriteLine(postQuery.Count()+" total posts");
+                            foreach(var item in postQuery)
+                            {
+                                Console.WriteLine($"{item.Blog.Name} Blog--\n\n  {item.Title}\n\n    {item.Content}\n____________________\n");
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                id2 = Convert.ToInt32(postChoice);
+                            }
+                            catch (Exception) { Console.WriteLine("Please enter a number"); }
+                            Blog postBlog2 = null;
+                            foreach (var item in idQuery2)
+                            {
+                                if (id2 == item.BlogId)
+                                {
+                                    postBlog2 = item;
+                                    break;
+                                }
+                            }
+                            if (postBlog2 == null) Console.WriteLine("Blog not found");
+                            else
+                            {
+                                var postQuery = db.Posts.Where(p => p.BlogId == postBlog2.BlogId);
+                                Console.WriteLine(postQuery.Count()+ " Post(s) in the "+postBlog2.Name+" blog:\n");
+                                foreach (var item in postQuery)
+                                {
+                                    Console.WriteLine(item.Title+"\n--"+ item.Content);
+                                    Console.WriteLine();
+                                }
+                            }
+                        }
                         break;
-                default:
+                    default:
                         menu = false;
                         break;
                 }
             }
             logger.Info("Program ended");
         }
+
     }
 }
